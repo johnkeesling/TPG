@@ -1,0 +1,27 @@
+package edu.washington.ling;
+
+public class Tweet implements Comparable {
+	private String message;
+	private int score;
+	
+	public Tweet(String message, int score) {
+		this.message = message;
+		this.score = score;
+	}
+	
+	public String getMessage() {
+		return message;
+	}
+	
+	public int getScore() {
+		return score;
+	}
+	
+	public void setScore(int score) {
+		this.score = score;
+	}
+	
+	public void setMessage(String message) {
+		this.message = message;
+	}
+}

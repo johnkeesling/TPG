@@ -1,0 +1,55 @@
+package edu.washington.ling;
+
+import android.app.Activity;
+import android.content.Context;
+import android.os.Bundle;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.DatePicker;
+import android.widget.EditText;
+
+public class TPG extends Activity {
+    /** Called when the activity is first created. */
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+    }
+    
+    public void myClickHandler(View target) {
+    	switch(target.getId()) {
+    	case R.id.okbtn:
+    		// this is temporary code
+    		//EditText et = (EditText)this.findViewById(R.id.textBox);
+    		//Spannable spn = et.getText();
+    		//et.setText(spn + " test " + spn);
+    		// end temp code
+    		// search for team schedule here
+    		// launch datePicker widget here
+    		InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+    		EditText et = (EditText)this.findViewById(R.id.textBox);
+    		imm.hideSoftInputFromWindow(et.getWindowToken(), 0);
+    		setContentView(R.layout.date_picker_layout);
+    	}
+    }
+    public void dateClickHandler(View target) {
+    	switch(target.getId()) {
+    	case R.id.dateOk:
+    		//proceed to play-by-play generation
+    		//temporarily setContentView to success screen
+    		setContentView(R.layout.tmp_success_screen);
+    	}
+    }
+    public void restartClickHandler(View target) {
+    	switch(target.getId()) {
+    	case R.id.restartButton:
+    		super.finish();
+    	}
+    }
+    public void dateCancelHandler(View target) {
+    	switch(target.getId()) {
+    	case R.id.dateCancel:
+    		setContentView(R.layout.main);
+    	}
+    }
+}

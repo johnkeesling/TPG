@@ -1,0 +1,23 @@
+package edu.washington.ling;
+
+import java.io.IOException;
+
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@SuppressWarnings("serial")
+public class TPG_ServerServlet extends HttpServlet {
+	
+	private static final String URL_BASE = "http://translate.google.com/translate_a/t?client=t";
+	
+	public void doGet(HttpServletRequest req, HttpServletResponse resp)
+			throws IOException {
+		resp.setContentType("text/plain");
+		resp.getWriter().println("Hello, world");
+		resp.getWriter().println(req);
+		resp.getWriter().println(resp);
+		
+		
+	}
+}

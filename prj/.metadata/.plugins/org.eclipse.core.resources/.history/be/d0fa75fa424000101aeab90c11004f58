@@ -1,0 +1,9 @@
+package edu.washington.ling;
+
+import java.util.Comparator;
+
+public class TweetSort implements Comparator<Tweet>{
+	public int compare(Tweet t1, Tweet t2) {
+		return t1.getScore() - t2.getScore();
+	}
+}

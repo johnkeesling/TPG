@@ -1,0 +1,18 @@
+package edu.washington.ling575;
+
+import javax.jdo.JDOHelper;
+import javax.jdo.PersistenceManagerFactory;
+
+/*
+ * Same as the PMF class in the GAE tutorial
+ */
+public final class JDOUtil {
+    private static final PersistenceManagerFactory pmfInstance =
+        JDOHelper.getPersistenceManagerFactory("transactions-optional");
+
+    private JDOUtil() {}
+
+    public static PersistenceManagerFactory get() {
+        return pmfInstance;
+    }
+}

@@ -1,0 +1,122 @@
+package edu.washington.ling;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import android.app.Activity;
+import android.content.Context;
+import android.os.Bundle;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
+import android.widget.TextView;
+
+public class TPG extends Activity {
+	
+	private static final String URL_BASE = "http://pbpgen.appspot.com/tpg_server?name=";
+	private static final String ENCODING = "UTF-8";
+	private static final String MY_SITE = "http://thewebsite.com/";
+	public String Name = "";
+	public String Date = "2010-01-05";
+	public String result = "";
+	
+    /** Called when the activity is first created. */
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+    }
+    
+    public void myClickHandler(View target) {
+    	switch(target.getId()) {
+    	case R.id.okbtn:
+    		// search for team schedule here
+    		// launch datePicker widget here
+    		InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+    		EditText et = (EditText)this.findViewById(R.id.textBox);
+    		imm.hideSoftInputFromWindow(et.getWindowToken(), 0);
+    		Name = et.getText().toString();
+    		setContentView(R.layout.date_picker_layout);
+    	}
+    }
+    public void dateClickHandler(View target) throws Exception {
+    	switch(target.getId()) {
+    	case R.id.dateOk:
+    		//proceed to play-by-play generation
+    		//set text of success screen to results of accessing server
+    		String completeURL = URL_BASE + Name + ";date=" + Date;
+    		HttpClient client = new DefaultHttpClient();
+    		HttpGet request = new HttpGet();
+    		request.setURI(new URI(completeURL));
+    		HttpResponse response = client.execute(request);
+    		result = response.type;
+    		setContentView(R.layout.tmp_success_screen);
+    		TextView tv = (TextView) this.findViewById(R.id.tmpFinal);
+    		tv.setText(result);
+    		
+    		/*try {
+    			HttpURLConnection conn = (HttpURLConnection) new URL(completeURL).openConnection();
+    			conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8");
+    			conn.setRequestProperty("REFERER", MY_SITE);
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+                
+                try {
+                	InputStream is = conn.getInputStream();
+                	String rawResult = makeResult(is);
+                	result = rawResult;
+                } finally {
+                	conn.getInputStream().close();
+                	if (conn.getErrorStream() != null)
+                		conn.getErrorStream().close();
+                }
+            } catch (Exception e) {
+    		} finally {
+    		setContentView(R.layout.tmp_success_screen);
+    		TextView tv = (TextView) this.findViewById(R.id.tmpFinal);
+    		tv.setText(result);
+    		
+    		}*/
+    	}
+    }
+    
+	private String makeResult(InputStream inputStream) throws Exception {
+		StringBuilder outputString = new StringBuilder();
+        	try{
+        		String string;
+                	if (inputStream != null){
+                		BufferedReader reader = new BufferedReader(new
+                		InputStreamReader(inputStream, ENCODING));
+
+                        while(null != (string = reader.readLine())){
+                                outputString.append(string).append('\n');
+                        }
+                	}
+        	}	catch (Exception e) {
+                System.out.println("Error reading translation stream.");
+        	}
+        return outputString.toString();
+	}
+    
+    public void restartClickHandler(View target) {
+    	switch(target.getId()) {
+    	case R.id.restartButton:
+    		super.finish();
+    	}
+    }
+    public void dateCancelHandler(View target) {
+    	switch(target.getId()) {
+    	case R.id.dateCancel:
+    		setContentView(R.layout.main);
+    	}
+    }
+}

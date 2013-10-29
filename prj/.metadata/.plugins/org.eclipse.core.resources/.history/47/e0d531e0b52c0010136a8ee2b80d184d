@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="title">Twitter-based Play-by-Play Generator</string>
+    <string name="inputPrompt">Enter a sports team here...</string>
+    <string name="ok">Okay</string>
+    <string name="datePrompt">Select a date...</string>
+    <string name="app_name">TPG</string>
+    <string name="theEnd">Goodbye</string>
+    <string name="testLongStrings">2:07	San Jose	Niclas Wallin credited with hit on Trevor Lewis in defensive zone\n
+2:20	Los Angeles	Stoppage - Icin\n
+2:20	Los Angeles	Michal Handzus won faceoff against Kyle Wellwood in offensive zone\n
+2:40	Los Angeles	Rob Scuderi shot blocked by Niclas Wallin\n
+3:03	San Jose	Giveaway by Douglas Murray in defensive zone\n
+3:11	Los Angeles	Matt Greene credited with hit on Jamie McGinn in neutral zone\n
+3:30	San Jose	Ben Eager credited with hit on Alec Martinez in defensive zone\n
+3:34	Los Angeles	Shot on goal by Matt Greene saved by Antti Niemi (Slapshot 54 ft)\n
+3:48	Los Angeles	Alec Martinez shot blocked by Ben Eager\n
+3:50	Los Angeles	Stoppage - Goalie Stopped\n
+3:50	Los Angeles	Trevor Lewis won faceoff against Logan Couture in offensive zone\n
+3:56	Los Angeles	Stoppage - Puck Frozen\n
+3:56	San Jose	Logan Couture won faceoff against Trevor Lewis in defensive zone\n
+4:06	Los Angeles	Shot missed by Trevor Lewis, Wide of Net (Wristshot 46 ft)\n
+4:17	San Jose	Devin Setoguchi credited with hit on Jack Johnson in offensive zone\n
+5:31	Los Angeles	Giveaway by Jonathan Quick in defensive zone\n
+5:53	San Jose	Kyle Wellwood shot blocked by Alec Martinez\n
+6:03	San Jose	Shot missed by Kyle Wellwood, Wide of Net (Snapshot 34 ft)\n
+6:06	San Jose	Dan Boyle shot blocked by Alec Martinez\n
+6:41	San Jose	Shot missed by Logan Couture, Wide of Net (Snapshot 37 ft)\n
+7:20	San Jose	Takeaway by Ben Eager in offensive zone\n
+7:24	San Jose	Jamal Mayers shot blocked by Rob Scuderi\n
+7:40	Los Angeles	Trevor Lewis credited with hit on Marc-Edouard Vlasic in neutral zone</string>
+</resources>

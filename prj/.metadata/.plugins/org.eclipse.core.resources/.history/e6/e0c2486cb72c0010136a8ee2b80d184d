@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent">
+<TextView
+	android:id="@+id/datePrompt"  
+	android:typeface="serif" android:textStyle="bold"
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+    android:text="@string/datePrompt"
+    android:gravity="center"
+	android:layout_alignParentTop="true"
+	android:layout_centerHorizontal="true"
+    />
+<DatePicker 
+	android:id="@+id/datePicker"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"
+	android:layout_centerVertical="true"
+	android:layout_centerHorizontal="true"
+	/>
+<Button
+	android:id="@+id/dateOk"
+	android:text="@+string/ok"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	android:layout_below="@+id/datePicker"
+	android:layout_centerHorizontal="true"
+	android:onClick="dateClickHandler"
+	/>
+<Button
+	android:id="@+id/dateCancel"
+	android:text="goBack"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	android:layout_below="@+id/dateOk"
+	android:layout_centerHorizontal="true"
+	android:onClick="dateCancelHandler"
+	/>
+</RelativeLayout>

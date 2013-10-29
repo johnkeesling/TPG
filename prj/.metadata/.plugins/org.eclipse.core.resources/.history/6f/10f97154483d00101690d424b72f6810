@@ -1,0 +1,115 @@
+package edu.washington.ling;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import android.app.Activity;
+import android.content.Context;
+import android.os.Bundle;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.DatePicker;
+import android.widget.EditText;
+import android.widget.TextView;
+
+public class TPG extends Activity {
+	
+	private static final String URL_BASE = "http://pbpgen.appspot.com/tpg_server?name=";
+	private static final String ENCODING = "UTF-8";
+	public String Name = "";
+	public String Date = "2010-01-05";
+	public String result = "";
+	public String error = "";
+	HttpResponse response;
+	
+    /** Called when the activity is first created. */
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+    }
+    
+    public void myClickHandler(View target) {
+    	switch(target.getId()) {
+    	case R.id.okbtn:
+    		// search for team schedule here
+    		// launch datePicker widget here
+    		InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+    		EditText et = (EditText)this.findViewById(R.id.textBox);
+    		imm.hideSoftInputFromWindow(et.getWindowToken(), 0);
+    		Name = et.getText().toString();
+    		setContentView(R.layout.date_picker_layout);
+    	}
+    }
+    public void dateClickHandler(View target) throws Exception {
+    	switch(target.getId()) {
+    	case R.id.dateOk:
+    		//proceed to play-by-play generation
+    		//set text of success screen to results of accessing server
+    		DatePicker dt = (DatePicker) this.findViewById(R.id.datePicker);
+    		String year = Integer.toString(dt.getYear());
+    		String month = Integer.toString(dt.getMonth());
+    		String day = Integer.toString(dt.getDayOfMonth());
+    		if (month.length() != 2) {
+    			month = '0' + month;
+    		}
+    		Date = year + '-' + month + '-' + day;
+    		String completeURL = URL_BASE + Name + ";date=" + Date;
+    		HttpClient client = new DefaultHttpClient();
+    		HttpGet request = new HttpGet();
+    		request.setURI(new URI(completeURL));
+    		try {
+    			response = client.execute(request);
+    		} catch (Exception e) {
+    			error = e.toString();
+    		}
+    		HttpEntity responseEntity = response.getEntity();
+    		InputStream is = responseEntity.getContent();
+    		String rawResult = makeResult(is);
+    		result = rawResult;
+    		setContentView(R.layout.tmp_success_screen);
+    		TextView tv = (TextView) this.findViewById(R.id.tmpFinal);
+    		tv.setText(Date);
+    		
+    	}
+    }
+    
+	private String makeResult(InputStream inputStream) throws Exception {
+		StringBuilder outputString = new StringBuilder();
+        	try{
+        		String string;
+                	if (inputStream != null){
+                		BufferedReader reader = new BufferedReader(new
+                		InputStreamReader(inputStream, ENCODING));
+
+                        while(null != (string = reader.readLine())){
+                                outputString.append(string).append('\n');
+                        }
+                	}
+        	}	catch (Exception e) {
+                System.out.println("Error reading translation stream.");
+        	}
+        return outputString.toString();
+	}
+    
+    public void restartClickHandler(View target) {
+    	switch(target.getId()) {
+    	case R.id.restartButton:
+    		super.finish();
+    	}
+    }
+    public void dateCancelHandler(View target) {
+    	switch(target.getId()) {
+    	case R.id.dateCancel:
+    		setContentView(R.layout.main);
+    	}
+    }
+}

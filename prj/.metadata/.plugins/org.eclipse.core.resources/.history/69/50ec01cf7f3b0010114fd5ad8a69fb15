@@ -1,0 +1,76 @@
+package edu.washington.ling575;
+
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.util.Enumeration;
+
+import javax.jdo.PersistenceManager;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.google.appengine.api.datastore.Key;
+import com.google.appengine.api.datastore.KeyFactory;
+
+@SuppressWarnings("serial")
+public class DemoFeb3ServerServlet extends HttpServlet {
+	
+	/*
+	 *Retrieve a resource 
+	*/
+	public void doGet(HttpServletRequest req, HttpServletResponse resp)
+			throws IOException {
+		
+		//Get a reference to the persistence manager
+		PersistenceManager persistenceManager = JDOUtil.get().getPersistenceManager();
+
+		
+        resp.setContentType("text/plain");
+		
+		
+		//retrieve the item with key "1"
+		Expression expression = persistenceManager.getObjectById(Expression.class, "1");
+		
+		
+		resp.getWriter().println(expression.getForm());
+		
+	}
+	
+	/*
+	 * Create a resource
+	 */
+	public void doPost(HttpServletRequest req, HttpServletResponse resp) 
+		throws ServletException, IOException {
+
+		//Get a reference to the persistence manager
+		PersistenceManager persistenceManager = JDOUtil.get().getPersistenceManager();
+		
+		Key key = null;
+		
+		resp.setContentType("text/plain");
+		
+		String requestURI = req.getRequestURI();
+		
+		String form = URLDecoder.decode(requestURI.substring(requestURI.lastIndexOf("/") + 1), "UTF-8");
+
+			
+			Expression new_expression = new Expression(form, "eng");
+			
+			//just save with a hard-coded key "1"
+			key = KeyFactory.createKey(Expression.class.getSimpleName(), "1");
+	        new_expression.setKey(key);
+			
+			
+			try{
+				
+				//Save newExpression to the datastore
+				persistenceManager.makePersistent(new_expression);
+				
+			} finally {
+				persistenceManager.close();
+			}
+						
+	
+	}
+}

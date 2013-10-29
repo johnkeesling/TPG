@@ -1,0 +1,51 @@
+package edu.washington.ling;
+
+public class MessageWithTimestamp implements Comparable {
+	private String message;
+	private String timestamp;
+	
+	public MessageWithTimestamp(String message, String timestamp) {
+		this.message = message;
+		this.timestamp = timestamp;
+	}
+	
+	public String getMessage() {
+		return message;
+	}
+	
+	public String getTimestamp() {
+		return timestamp;
+	}
+	
+	public void setMessage(String message) {
+		this.message = message;
+	}
+	
+	public void setTimestamp(String timestamp) {
+		this.timestamp = timestamp;
+	}
+	
+	public String printTweet() {
+		String result = "message=" + this.message;
+		return result;
+	}
+	
+	public int compareTo(Object obj) {
+		try { 
+			Tweet tmp = (Tweet) obj;
+			int ts1 = Integer.parseInt(this.timestamp.split(" ")[2]);
+			String[] secondTimestampParts = tmp.getTimestamp().split(" ")[2].split(":");
+			String secondTimestamp = secondTimestampParts[0] + secondTimestampParts[1] + secondTimestampParts[2]; 
+			int ts2 = Integer.parseInt(secondTimestamp);
+			if (ts1 < ts2) {
+				return 1;
+			} else if (ts1 > ts2) {
+				return -1;			
+			} else {
+				return 0;
+			}
+		} catch (Exception e) {
+			return 0;
+		}
+	}
+}

@@ -1,0 +1,22 @@
+package edu.washington.ling;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import javax.servlet.http.*;
+
+import org.apache.commons.lang.StringEscapeUtils;
+
+import org.json.JSONArray;
+
+@SuppressWarnings("serial")
+public class TPG_ServerServlet extends HttpServlet {
+	public void doGet(HttpServletRequest req, HttpServletResponse resp)
+			throws IOException {
+		resp.setContentType("text/plain");
+		resp.getWriter().println("Hello, world");
+		resp.getWriter().println(req);
+		resp.getWriter().println(resp);
+	}
+}

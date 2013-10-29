@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="title">Twitter-based Play-by-Play Generator</string>
+    <string name="inputPrompt">Enter a sports team here...</string>
+    <string name="ok">Okay</string>
+    <string name="goBack">Go back</string>
+    <string name="datePrompt">On what day did the game occur?</string>
+    <string name="app_name">TPG</string>
+    <string name="theEnd">Goodbye</string>
+    <string name="testLongStrings">#SJSharks squander another third period lead, fall 3-2 in the shootout http://sbn.to/fCt1Kt\n\n
+#SJSharks squander another third period lead, fall 3-2 in the shootout http://sbn.to/fCt1Kt\n\n
+Bummed about the #sjsharks game, but my kitten is lounging with me and I couldn\'t be any happier. #Itsthelittlethings\n\n
+#SjSharks RT--->> #ChasinTheCool #Performin This #Sunday #SanJose Ca @ Johnny V\'s Show Starts At 8\n\n
+#WaiveWallin it should be a no-brainer. #sjsharks\n\n
+Happy with the point #sjsharks fans! Better than nothing! 9/10 isn\'t bad!\n\n
+@BASportsGuy U dont have 2 be a hockey expert to no that the #sjsharks not scoring or winning in a shootout is creepy its there specialty\n\n
+@BASportsGuy Kings goalie is a shutout master combined w/ the #sjsharks lack of new shootout move ideas. They blew it. Deserved the loss.\n\n
+Clowe, Pavs, and Cooter. Y\'all gotta change it up. Backhand upstairs, wrister up top, deke/backhand 5-hole. They don\'t work anymore. #SJSharks\n\n
+busting up laughing that my best friend is pimping me out to the #SJSharks!\n\n
+YaySJS Always have faith!\n\n
+#sjsharks lose??I can not believe what i had just saw......why.....why....why?????I feel soo sad now!I felt like we will never lose again\n\n
+The post is a goaltender\'s best friend! #NHL #LAKings #SJSharks\n\n
+i still love my #sjsharks.\n\n
+I\'m no hockey expert, but the #SJSharks not scoring once in a shootout certainly looked strange and kinda sad.\n</string>
+</resources>

@@ -1,0 +1,537 @@
+package edu.washington.ling;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Scanner;
+
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+/*
+ *  Authors: John Keesling and Anthony Wong
+ *  Created for: Ling 575 - NLP on Mobile Devices
+ * 
+ *  TPG_ServerServlet contains nearly all server-side processing components for the 
+ *  Twitter-based Play-by-play generator.  Among other things, it contains:
+ *  1. A GET call to the Twitter Search API, which returns results in JSON format
+ *  2. JSON processing to extract Tweet and timestamp information
+ *  3. A sentence ranker that assigns scores to each Tweet based on a set of heuristics
+ *  4. A redundancy remover that eliminates the most redundant sentences from output
+ *  etc.  
+ */
+
+@SuppressWarnings("serial")
+public class TPG_ServerServlet extends HttpServlet {
+	
+    private static final String ENCODING = "UTF-8"; 
+	private static final String URL_BASE = "http://search.twitter.com/search.json?q=%23";
+	private static final String MY_SITE = "http://localhost:8888/";
+	public String otpt = "";
+	
+	/*
+	 *  QUERY is currently manually generated and maintained using WordNet relations.
+	 *  We chose to do this all manually in order to maximize the ease in which we could
+	 *  test different queries.  
+	 *  
+	 *  QUERY_COUNTS is an array that contains a corresponding int value for each query string.
+	 *  In rankSentences() below, each QUERY_COUNTS int is increased for each occurrence of a 
+	 *  query term.  This is for use in a calculation of tf-idf (or just one or the other).
+	 */
+	private static final String[] QUERY = {"shot", "win", "loss", "attempt", "effort", "goal", "score", "assist", "play", "maneuver", "turnover", "penalty", "disadvantage", "powerplay", "block", "whistle", "stop", "playoff"};
+	int[] QUERY_COUNTS = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	double[] QUERY_IDFS = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+	
+	/* 
+	 *  loadTwitter() calls the Twitter Search API and processes the JSON output.
+	 *  This occurs 15 times, as Twitter allows for a maximum of 15 pages of search results.
+	 *  Its parameters are determined by the query contained in the call to the server 
+	 *  from the mobile device.  That step is contained in the doGet() method below.
+	 */
+	
+	protected String loadTwitter(String teamName, String Date, String untilDate) {
+		String result = "";
+		String completeURL = URL_BASE + teamName + "+since:" + Date + "+until:" + untilDate + "&rpp=100";
+		
+		for (int p = 1; p < 6; p++) {
+			int pageNum = p;
+			completeURL = completeURL + "&page=" + Integer.toString(pageNum);
+			
+			// Create and open the connection
+			try {
+				HttpURLConnection conn = (HttpURLConnection) new URL(completeURL).openConnection();
+				conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8");
+				conn.setRequestProperty("REFERER", MY_SITE);
+				conn.setDoInput(true);
+				conn.setDoOutput(true);
+            
+				// Read in the input stream and process the JSON output
+				try {
+					InputStream is = conn.getInputStream();
+					String rawResult = makeResult(is);
+					JSONObject JSONresult = new JSONObject(rawResult);
+					String results = JSONresult.getString("results");
+					JSONArray resultsArray = new JSONArray(results);
+
+					// process the JSON object a bit more
+					for (int i = 0; i < resultsArray.length(); i++) {
+						JSONObject curObj = resultsArray.getJSONObject(i);
+						String curTweet = curObj.getString("text");
+						String time = curObj.getString("created_at");
+						result = result + "---" + time + "&&&" + curTweet; 
+					}
+
+					// close the connection etc.
+				} finally {
+					conn.getInputStream().close();
+					if (conn.getErrorStream() != null)
+						conn.getErrorStream().close();
+				}
+			} catch (Exception e) {
+			}
+		}
+        return result;
+	}
+	
+	/*
+	 * rankSentences() contains the sentence ranking algorithm.  Among other things, this
+	 * might contain simple heuristics such as a comparison of timestamps (that would, for
+	 * example, prevent many Tweets that are in response to the same in-game event), an
+	 * implementation of TF-IDF (or just one or the other, depending on performance), and
+	 * other things that remain to be determined.
+	 * 
+	 *   @param tweets
+	 *   @return an array of Tweets sorted by their score value (note that the code to return
+	 *   a string object has been commented out)
+	 */
+	
+	protected Tweet[] rankSentences(String tweets) throws Exception {
+		
+		/*
+		 *  Note that this code contains two input schemas -- one for actually calling the
+		 *  Twitter Search API and one for loading the TPG_Server/war/test_input.txt file. 
+		 *  This is made available to avoid being blacklisted by Twitter's search abuse police.
+		 *  To do one or the other might require more than just commenting out a block of code
+		 *  and uncommenting another.  If you encounter any problems, let John Keesling know.
+		 *  
+		 *  Also note that int[] scores is currently unused and most likely unnecessary.
+		 */
+		
+		Tweet[] sents = new Tweet[501]; // this is a temp size initializer for String that should depend on the number of search results from twitter or something
+		int[] scores = new int[501]; // also a temp size initializer
+		String result = "";
+		int numLines = 0;
+		String timestamp = "tempjunk";
+		
+		// the code below is only relevant for testing, when not querying from twitter
+		/*
+		String curPath = new File(".").getCanonicalPath();
+		String test_inputPath = curPath + "/test_input.txt";
+		File inputFile = new File(test_inputPath);
+		Scanner sc = new Scanner(inputFile);
+		
+		
+		Scanner sc = new Scanner(tweets);
+		
+		// assign a score to each sent, create a Tweet object for them, and put it in the corresponding cell in sents 
+		while (sc.hasNextLine()) {
+			int score = 0;
+			String curLine = sc.nextLine();
+			String[] words = curLine.split(" ");
+		*/
+		// this portion was only relevant for testing; everything below this point is relevant for everything else
+		
+		// the following code is only relevant for parsing real Twitter output
+		String[] lines = tweets.split("&&&");
+	
+		PorterStemmer stemmer = new PorterStemmer();
+		
+		for (int u = 0; u < lines.length; u++) {
+			int score = 0;
+			String curLine = lines[u];
+			String curMsg = curLine.split("---")[0];
+			//timestamp = "tmp";
+			try {
+				timestamp = curLine.split("---")[1];
+			} catch (Exception e) {
+				timestamp = "nope";
+			}
+			String[] words = curLine.split(" ");
+			
+			// the portion above was only relevant for actually loading from the Twitter Search API
+			
+			/*
+			 *  Assign scores to each Tweet and make a Tweet object that contains both the 
+			 *  String message and the score.  This currently just compares each word in the
+			 *  Tweet to each word in the predefined QUERY.  However, this will later contain
+			 *  the other heuristics.  
+			 */
+			
+			for (int i=0; i < words.length; i++) {
+				for (int j=0; j < QUERY.length; j++) {
+					String curWord = words[i].toLowerCase().replace("?", "").replace(".", "").replace(",", ""); // make it lowercase and strip punctuation
+					String stemmedWord = stemmer.stem(curWord);
+					String curQueryWord = QUERY[j];
+					
+					if (stemmedWord.equals(curQueryWord)) {
+						score++;
+						QUERY_COUNTS[j] = QUERY_COUNTS[j]++;
+					}
+					
+				}
+				
+				/*  bug note: for some reason, a blank line was getting through.  it was 
+				 *  proving difficult to handle, so i dealt with it by changing the string
+				 *  and score values.  for some other reason, it is now excluded from output.
+				 *  this seems effective, but may cause problems later on.
+				 */
+				if (curLine.equals("")) {
+					curLine = "exclude this line";
+					score = -1;
+				}
+				
+				// create the Tweet object and store it in sents[] for sorting
+				// Note that this can be applied only to tweets with a score > 0 or some other
+				// value, to reduce processing time.
+				
+				Tweet tweet = new Tweet(curMsg, score, timestamp);
+				sents[numLines] = tweet;
+				scores[numLines] = score;
+								
+			}
+			numLines = numLines + 1;
+		}
+		
+		// calculate idfs per word here
+		for (int n = 0; n < QUERY.length; n++) {
+			double df = numLines / (QUERY_COUNTS[n] + 1);
+			double idf = java.lang.Math.log(df);
+			QUERY_IDFS[n] = idf;
+		}
+		
+		// add the idf for each query term that is in each tweet
+		
+		for (int s = 0; s < sents.length; s++) {
+			Tweet curTweet = sents[s];
+			double curScore = 0.0;
+			try{
+				curScore = curTweet.getScore();
+			} catch (Exception e) {
+				curScore = -1.0;
+			}
+			String curMsg = "";
+			try {
+				curMsg = curTweet.getMessage();
+			} catch (Exception e) {
+				curMsg = "you had an error here: " + e.getMessage();
+			}
+			String[] words = curMsg.split(" ");
+			for (int i=0; i < words.length; i++) {
+				for (int j=0; j < QUERY.length; j++) {
+					String curWord = words[i].toLowerCase().replace("?", "").replace(".", "").replace(",", ""); // make it lowercase and strip punctuation
+					String curQueryWord = QUERY[j];
+					if (curWord.equals(curQueryWord)) {
+						double idfScore = QUERY_IDFS[j];
+						double newScore = curScore + idfScore;
+						curTweet.setScore(newScore);
+					}
+				}
+			}
+		}
+
+		// Sort the Tweets by score
+		try {
+			Arrays.sort(sents);
+		} catch (NullPointerException o) {
+			//result = result + Arrays.toString(o.getStackTrace()) + "\n";
+		}
+		
+		/*
+		* This block of code and the "result" definition above construct a String of 
+		* Tweet messages and their score for easier output, if desired.
+		// Construct the output String object
+		for (int n=0; n < sents.length-1; n++) {
+			try {
+				String newLine = sents[n].getMessage() + " score=" + Integer.toString(sents[n].getScore()) + "\n";
+				result = result + newLine;
+			} catch (NullPointerException o) {
+			}
+		}
+		
+		return result;
+		*/
+		return sents;
+	}
+	
+	/*
+	 *  arrangeTweets() reads an array of Tweets that has been sorted by score, removes redundant
+	 *  Tweets, and then returns a String containing each tweet in chronological order, delineated
+	 *  by the \n character.
+	 *  
+	 *  @param sortedTweets
+	 *  @return String as detailed above 
+	 */
+	
+	protected String arrangeTweets(Tweet[] sortedTweets) throws Exception {
+		MessageWithTimestamp[] messages = new MessageWithTimestamp[sortedTweets.length]; //this will be too big once redundant sentences are removed.  a solution is to initialize this after removing those sentences.
+		String result = "";
+		
+		for (int i = 0; i < sortedTweets.length; i++) {
+			try {
+				String curTweet = sortedTweets[i].getMessage();
+				String curTime = sortedTweets[i].getTimestamp();
+				MessageWithTimestamp m = new MessageWithTimestamp(curTweet, curTime);
+				messages[i] = m;
+			} catch (Exception e) {
+				return Integer.toString(sortedTweets.length);
+			}
+		}
+		
+		Arrays.sort(messages);
+		
+		for (int i = 0; i < messages.length; i++) {
+			String curTweet = "";
+			curTweet = messages[i].getMessage();
+			String curTime = messages[i].getTimestamp();
+			result = result + "\n" + curTweet + "--" + curTime;
+		}
+		
+		/*for (int i = 0; i < sortedTweets.length; i++) {
+			try {
+				String curTweet = "";
+				curTweet = sortedTweets[i].getMessage();
+				double score = sortedTweets[i].getScore();
+				String curTime = sortedTweets[i].getTimestamp();
+				result = result + "\n" + curTweet + " " + Double.toString(score) + "--" + curTime;
+			} catch (Exception e) {
+			}
+		}*/
+		
+		/*for (int i = 0; i < rankedTweets.length; i++) {
+		String curTweet = "";
+		curTweet = rankedTweets[i].getMessage();
+		double score = rankedTweets[i].getScore();
+		String curTime = rankedTweets[i].getTimestamp();
+		//resp.getWriter().println(curTweet + " " + Double.toString(score) + " timestamp=" + curTime + " it's working");
+	}*/
+		
+		return result;
+	}
+
+	/*
+	 *  computeSimilarity() uses the Jama library to compute a cosine similarity between
+	 *  tweets, to be used in redundancy removal.
+	 *  
+	 *  @params tweet1, tweet2
+	 *  @returns double Cosine similarity score
+	 *  
+	 */
+	
+	protected double computeSimilarity(Tweet tweet1, Tweet tweet2) {
+		double d = 0.0;
+//		Matrix sourceDoc = new Matrix(tweet1.getMessage().split(" "));
+		
+		//placeholder
+		
+		return d;
+	}
+	
+	
+	/*
+	 *  makeResult() is used to read in the input stream from loadTwitter.  It was adopted from
+	 *  Scott Farrar's code for a similar purpose.
+	 */
+	
+	private String makeResult(InputStream inputStream) throws Exception {
+		StringBuilder outputString = new StringBuilder();
+        	try{
+        		String string;
+                	if (inputStream != null){
+                		BufferedReader reader = new BufferedReader(new
+                		InputStreamReader(inputStream, ENCODING));
+
+                        while(null != (string = reader.readLine())){
+                                outputString.append(string).append('\n');
+                        }
+                	}
+        	}	catch (Exception e) {
+                System.out.println("Error reading stream.");
+        	}
+        return outputString.toString();
+	}
+	
+	/*
+	 *  doGet() is sort of like the server's main() method.  It is what receives the Http request,
+	 *  calls the other methods in this class, and creates and returns the Http response.
+	 *  
+	 *  At the moment, the simplest response is a large String object.  This object could then be
+	 *  parsed further on the mobile device, if necessary, or just printed as is in a TextView 
+	 *  object.
+	 *  
+	 */
+	
+	public void doGet(HttpServletRequest req, HttpServletResponse resp)
+			throws IOException {
+
+		// isGame == 0 if there is no game on the chosen date
+		int isGame = 0;
+		resp.setContentType("text/plain");
+		
+		// Get the query info
+		String[] GETreport = req.toString().split("\n");
+		String firstLine = GETreport[0];
+		String ModuleAndQuery = firstLine.split(" ")[1];
+		String Query = ModuleAndQuery.split("\\?")[1];
+		String teamName = Query.split(";")[0].split("=")[1];
+		String Date = Query.split(";")[1].split("=")[1];
+		String[] untilDateArray = Date.split("-");
+		int day = Integer.parseInt(untilDateArray[2].trim()) + 1;
+		String newDay = Integer.toString(day);
+		if (newDay.length() == 1) {
+			newDay = "0" + newDay;
+		}
+		String untilDate = untilDateArray[0] + "-" + untilDateArray[1] + "-" + newDay; 
+		String curPath = new File(".").getCanonicalPath();
+		
+		// Note that if we do any edit distance matching, it will have to occur before the 
+		// schedule file is loaded here.
+		String scheduleName = teamName + "_schedule";
+		String schedulePath = curPath + "/" + scheduleName;
+		File scheduleFile = new File(schedulePath);
+		Scanner sc = new Scanner(scheduleFile);
+		while (sc.hasNextLine()) {
+			String curLine = sc.nextLine();
+			//resp.getWriter().println("'" + curLine + "' '" + Date + "'");
+			if (curLine.equals(Date)) {
+				isGame = 1;
+			}
+		}
+		if (isGame == 0) {
+			resp.getWriter().println("No game on that date, please choose again");
+		} else {
+			resp.getWriter().println("There is a game that day!");
+		}
+		
+		// These print statements were used to verify testing.  They can be removed if needed.
+		resp.getWriter().println(teamName);
+		resp.getWriter().println(Date);
+		resp.getWriter().println(untilDate);
+
+		// First, load the tweets from Twitter
+		// you changed the third parameter from "untilDate" to "Date" after noticing that that works
+		String tweets = loadTwitter(teamName, Date, Date);
+		
+		//test print all tweets before ranking/sorting
+		//resp.getWriter().println(tweets);
+		
+		// Second, rank the tweets according the the algorithm in rankSentences()
+		//String rankedTweets = "";
+		Tweet[] rankedTweets = {new Tweet("this", 1, "test")};
+		try {
+			rankedTweets = rankSentences(tweets);
+		} catch (Exception e) {
+			resp.getWriter().println(e);
+			resp.getWriter().println(Arrays.toString(e.getStackTrace()));
+			resp.getWriter().println(e.getLocalizedMessage());
+			resp.getWriter().println(e.getCause());
+		}
+		
+		// finally, print the tweets along with their scores and " it's working" just for test purposes 
+		/*for (int i = 0; i < rankedTweets.length; i++) {
+			String curTweet = "";
+			curTweet = rankedTweets[i].getMessage();
+			double score = rankedTweets[i].getScore();
+			String curTime = rankedTweets[i].getTimestamp();
+			//resp.getWriter().println(curTweet + " " + Double.toString(score) + " timestamp=" + curTime + " it's working");
+		}*/
+		// Last, print the String output
+		
+		//get the arranged tweets
+		String arrangedTweets = "";
+		try {
+			arrangedTweets = arrangeTweets(rankedTweets);
+		} catch (Exception e) {
+			arrangedTweets = "nice try" + e;
+		}
+		resp.getWriter().println(arrangedTweets);
+	}
+	
+	//cosine simlarity method
+	/*
+	 * WARNING: method not tested yet in the context of TPG_ServerServlet
+	 * param: String1 String2
+	 * Method description: Converts input strings to intermediate hashtables used for cosine_sim calculation,
+	 * uses the bag-of-words approach to represent input strings
+	 * returns: Double representing the cosine similarity value
+	 */
+	static Double cosine_sim (String string1, String string2) {
+		if (string1.isEmpty() || string2.isEmpty()) {return 0.0;} //no similarity between empty strings
+		Hashtable<String,Double> vector1 = new Hashtable<String,Double>();
+		Hashtable<String,Double> vector2 = new Hashtable<String,Double>();
+		String[] split_text = string1.split("\\s+");  //split by whitespace
+		for (String x: split_text) { //add all words in string1 to a hash table
+			Double temp = vector1.get(x);
+			if (temp == null) {temp = new Double(0.0);}
+			temp++;
+			vector1.put(x, temp);
+		}
+		split_text = string2.split("\\s+");  //split by whitespace
+		for (String x: split_text) { //add all words in string2 to a hash table
+			Double temp = vector2.get(x);
+			if (temp == null) {temp = new Double(0.0);}
+			temp++;
+			vector2.put(x, temp);
+		}
+		
+		Enumeration<String> one = vector1.keys();
+		Enumeration<String> two = vector2.keys();
+		Double numerator = 0.0;
+		Double denominator = 0.0;
+		
+		//calculating the denominator
+		Double firstPartDenominator = 0.0;
+		while (one.hasMoreElements()) {
+			String key = (String) one.nextElement();
+			Double value = vector1.get(key).doubleValue();
+			firstPartDenominator += Math.pow(value, 2);
+		}
+		firstPartDenominator = Math.sqrt(firstPartDenominator);
+		
+		Double secondPartDenominator = 0.0;
+		while (two.hasMoreElements()) {
+			String key = (String) two.nextElement();
+			Double value = vector2.get(key).doubleValue();
+			secondPartDenominator += Math.pow(value, 2);
+		}
+		secondPartDenominator = Math.sqrt(secondPartDenominator);
+		denominator = firstPartDenominator * secondPartDenominator;
+		
+		//calculating numerator
+		one = vector1.keys();
+		while (one.hasMoreElements()) {
+			String key = (String) one.nextElement();
+			Double value = vector2.get(key);  //see if this key exists in the other vector
+			if (value == null) { continue; }
+			else {
+				Double pi = vector1.get(key).doubleValue();
+				Double qi = value.doubleValue();
+				Double temp = pi*qi;
+				if (numerator == 0.0) {numerator = temp;}
+				else { numerator += temp; }
+			}
+		}	
+
+		return numerator/denominator;
+	}
+}

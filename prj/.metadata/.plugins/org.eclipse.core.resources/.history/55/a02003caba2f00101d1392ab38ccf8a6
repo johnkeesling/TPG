@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    >
+<TextView
+	android:id="@+id/title"
+	android:typeface="serif" android:textStyle="bold"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	android:gravity="center"
+	android:layout_alignParentTop="true"
+	android:layout_centerHorizontal="true"
+	android:text="@+string/title"
+	android:cacheColorHint="#00000000"
+	/>
+<EditText
+	android:id="@+id/textBox"
+	android:typeface="serif" android:textStyle="bold"  
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content"
+    android:layout_below="@+id/title"
+    android:hint="@string/inputPrompt"
+    />
+<Button
+	android:id="@+id/okbtn"
+	android:text="@+string/ok"
+	android:typeface="serif" android:textStyle="bold"
+	android:layout_width="wrap_content"
+	android:layout_height="75dip"
+	android:layout_below="@+id/textBox"
+	android:layout_alignRight="@+id/textBox"
+	android:onClick="myClickHandler"
+	/>
+</RelativeLayout>

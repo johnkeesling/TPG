@@ -1,0 +1,212 @@
+package edu.washington.ling;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Scanner;
+
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+
+@SuppressWarnings("serial")
+public class TPG_ServerServlet extends HttpServlet {
+	
+    private static final String ENCODING = "UTF-8"; 
+	private static final String URL_BASE = "http://search.twitter.com/search.json?q=%23";
+	private static final String MY_SITE = "http://localhost:8888/";
+	public String otpt = "";
+	private static final String[] QUERY = {"shot", "goal", "assist", "turnover", "penalty"};
+	
+	protected String loadTwitter(String teamName, String Date, String untilDate) {
+		String result = "";
+		String completeURL = URL_BASE + teamName + "+since:" + Date + "&rpp=100";
+		
+		try {
+			HttpURLConnection conn = (HttpURLConnection) new URL(completeURL).openConnection();
+			conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8");
+			conn.setRequestProperty("REFERER", MY_SITE);
+            conn.setDoInput(true);
+            conn.setDoOutput(true);
+            
+            try {
+            	InputStream is = conn.getInputStream();
+            	String rawResult = makeResult(is);
+            	JSONObject JSONresult = new JSONObject(rawResult);
+            	//String[] names = JSONObject.getNames(JSONresult);
+            	String results = JSONresult.getString("results");
+            	JSONArray resultsArray = new JSONArray(results);
+
+            	//process the json object again
+            	for (int i = 0; i < resultsArray.length(); i++) {
+            		JSONObject curObj = resultsArray.getJSONObject(i);
+            		String curTweet = curObj.getString("text");
+            		result = result + curTweet + "\n"; 
+            	}
+
+            } finally {
+            	conn.getInputStream().close();
+            	if (conn.getErrorStream() != null)
+            		conn.getErrorStream().close();
+            }
+        } catch (Exception e) {
+		}
+        return result;
+	}
+	
+	protected String rankSentences(String tweets) throws Exception {
+		Tweet[] sents = new Tweet[1020]; // this is a temp size initializer for String that should depend on the number of search results from twitter or something
+		int[] scores = new int[1020]; // also a temp size initializer
+		String result = "";
+		int numLines = 0;
+		
+		// this portion is only relevant for testing, when not querying from twitter
+		/*
+		String curPath = new File(".").getCanonicalPath();
+		String test_inputPath = curPath + "/test_input.txt";
+		File inputFile = new File(test_inputPath);
+		Scanner sc = new Scanner(inputFile);
+		
+		
+		Scanner sc = new Scanner(tweets);
+		
+		// assign a score to each sent, create a Tweet object for them, and put it in the corresponding cell in sents 
+		while (sc.hasNextLine()) {
+			int score = 0;
+			String curLine = sc.nextLine();
+			String[] words = curLine.split(" ");
+		*/
+		// this portion was only relevant for testing; everything below this point is relevant for everything else
+		
+		// this portion is only relevant for parsing real Twitter output
+		String[] lines = tweets.split("\n");
+		result = Integer.toString(lines.length);
+		/*
+		for (int u = 0; u < lines.length; u++) {
+			int score = 0;
+			String curLine = lines[u];
+			String[] words = curLine.split(" ");
+			
+			// assign scores in scores[] and make a Tweet object containing both
+			for (int i=0; i < words.length; i++) {
+				for (int j=0; j < QUERY.length; j++) {
+					String curWord = words[i].toLowerCase();
+					String curQueryWord = QUERY[j];
+					if (curWord.equals(curQueryWord)) {
+						score++;
+					}
+				}
+				Tweet tweet = new Tweet(curLine, score);
+				sents[numLines] = tweet;
+				scores[numLines] = score;
+			}
+			
+			
+			//result = result + curLine + " Score=" + Integer.toString(score) + "\n";
+			numLines = numLines + 1;
+		}
+
+		//add code to sort sents by score here -- ask anthony about doing this
+		Arrays.sort(sents);
+		for (int i=0; i < sents.length; i++) {
+			String newLine = sents[i].getMessage() + " score=" + Integer.toString(sents[i].getScore()) + "\n";
+			result = result + newLine;
+		}
+		*/
+		result = result + Integer.toString(numLines);
+		return result;
+	}
+	
+	
+	private String makeResult(InputStream inputStream) throws Exception {
+		StringBuilder outputString = new StringBuilder();
+        	try{
+        		String string;
+                	if (inputStream != null){
+                		BufferedReader reader = new BufferedReader(new
+                		InputStreamReader(inputStream, ENCODING));
+
+                        while(null != (string = reader.readLine())){
+                                outputString.append(string).append('\n');
+                        }
+                	}
+        	}	catch (Exception e) {
+                System.out.println("Error reading stream.");
+        	}
+        return outputString.toString();
+	}
+	
+	
+	public void doGet(HttpServletRequest req, HttpServletResponse resp)
+			throws IOException {
+
+		// isGame == 0 if there is no game on the chosen date
+		int isGame = 0;
+		resp.setContentType("text/plain");
+		String[] GETreport = req.toString().split("\n");
+		String firstLine = GETreport[0];
+		String ModuleAndQuery = firstLine.split(" ")[1];
+		String Query = ModuleAndQuery.split("\\?")[1];
+		String teamName = Query.split(";")[0].split("=")[1];
+		String Date = Query.split(";")[1].split("=")[1];
+		String[] untilDateArray = Date.split("-");
+		int day = Integer.parseInt(untilDateArray[2].trim()) + 1;
+		String newDay = Integer.toString(day);
+		if (newDay.length() == 1) {
+			newDay = "0" + newDay;
+		}
+		String untilDate = untilDateArray[0] + "-" + untilDateArray[1] + "-" + newDay; 
+		String curPath = new File(".").getCanonicalPath();
+		String scheduleName = teamName + "_schedule";
+		String schedulePath = curPath + "/" + scheduleName;
+		File scheduleFile = new File(schedulePath);
+		Scanner sc = new Scanner(scheduleFile);
+		while (sc.hasNextLine()) {
+			String curLine = sc.nextLine();
+			//resp.getWriter().println("'" + curLine + "' '" + Date + "'");
+			if (curLine.equals(Date)) {
+				resp.getWriter().println("this");
+				isGame = 1;
+			}
+		}
+		if (isGame == 0) {
+			resp.getWriter().println("No game on that date, please choose again");
+		} else {
+			resp.getWriter().println("There is a game that day!");
+		}
+		resp.getWriter().println(teamName);
+		resp.getWriter().println(Date);
+		resp.getWriter().println(untilDate);
+/*
+		try {
+			String tmpOutput = rankSentences();
+			resp.getWriter().println(tmpOutput);
+		} catch (Exception o) {
+			resp.getWriter().println(o);
+		}
+	*/	
+		// put rankSentences after this stage, take the string tweets as input, and return the ranked list of tweets 
+		String tweets = loadTwitter(teamName, Date, untilDate);
+		resp.getWriter().println(tweets);
+		String rankedTweets = "";
+		try {
+			rankedTweets = rankSentences(tweets);
+		} catch (Exception e) {
+			resp.getWriter().println(e);
+			resp.getWriter().println(Arrays.toString(e.getStackTrace()));
+			resp.getWriter().println(e.getLocalizedMessage());
+			resp.getWriter().println(e.getCause());
+		}
+		resp.getWriter().println(rankedTweets);
+		
+	}
+}

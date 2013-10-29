@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="title">Twitter-based Play-by-Play Generator\nNote that only "Los Angeles Lakers," "Golden State Warriors," and "San Jose Sharks" are currently supported.</string>
+    <string name="inputPrompt">Enter a sports team here...</string>
+    <string name="ok">Okay</string>
+    <string name="goBack">Go back</string>
+    <string name="datePrompt">On what day did the game occur?</string>
+    <string name="app_name">TPG</string>
+    <string name="theEnd">Goodbye</string>
+</resources>

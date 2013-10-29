@@ -1,0 +1,57 @@
+package edu.washington.ling;
+
+public class Tweet implements Comparable {
+	private String message;
+	private double score;
+	private String timestamp;
+	
+	public Tweet(String message, int score, String timestamp) {
+		this.message = message;
+		this.score = score;
+		this.timestamp = timestamp;
+	}
+	
+	public String getMessage() {
+		return message;
+	}
+	
+	public String getTimestamp() {
+		return timestamp;
+	}
+	
+	public double getScore() {
+		return score;
+	}
+	
+	public void setScore(double score) {
+		this.score = score;
+	}
+	
+	public void setMessage(String message) {
+		this.message = message;
+	}
+	
+	public void setTimestamp(String timestamp) {
+		this.timestamp = timestamp;
+	}
+	
+	public String printTweet() {
+		String result = "message=" + this.message + " and score=" + this.score;
+		return result;
+	}
+	
+	public int compareTo(Object obj) {
+		try { 
+			Tweet tmp = (Tweet) obj;
+			if (this.score < tmp.score) {
+				return 1;
+			} else if (this.score > tmp.score) {
+				return -1;			
+			} else {
+				return 0;
+			}
+		} catch (Exception e) {
+			return 0;
+		}
+	}
+}

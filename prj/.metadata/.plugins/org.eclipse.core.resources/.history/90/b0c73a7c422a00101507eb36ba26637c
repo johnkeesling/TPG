@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inputPrompt">Type a sports team here...</string>
+    <string name="ok">Okay</string>
+    <string name="app_name">TPG</string>
+</resources>

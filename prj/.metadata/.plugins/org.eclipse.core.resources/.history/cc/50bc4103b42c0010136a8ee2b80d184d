@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="title">Twitter-based Play-by-Play Generator</string>
+    <string name="inputPrompt">Enter a sports team here...</string>
+    <string name="ok">Okay</string>
+    <string name="datePrompt">Select a date...</string>
+    <string name="app_name">TPG</string>
+    <string name="theEnd">Goodbye</string>
+    <string name="testLongStrings">this\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\n</string>
+</resources>

@@ -1,0 +1,87 @@
+package edu.washington.ling;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+
+@SuppressWarnings("serial")
+public class TPG_ServerServlet extends HttpServlet {
+	
+    private static final String ENCODING = "UTF-8"; 
+	private static final String URL_BASE = "http://search.twitter.com/search?q=%23";
+	private static final String MY_SITE = "http://localhost:8888/";
+	public String otpt = "";
+
+	protected String loadTwitter(String teamName, String Date) {
+		String result = "";
+		String completeURL = URL_BASE + teamName + "+since:" + Date;
+		
+		try {
+			HttpURLConnection conn = (HttpURLConnection) new URL(completeURL).openConnection();
+			conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8");
+			conn.setRequestProperty("REFERER", MY_SITE);
+            conn.setDoInput(true);
+            conn.setDoOutput(true);
+            
+            try {
+            	InputStream is = conn.getInputStream();
+            	String rawResult = makeResult(is);
+            	result = rawResult;
+            } finally {
+            	conn.getInputStream().close();
+            	if (conn.getErrorStream() != null)
+            		conn.getErrorStream().close();
+            }
+        } catch (Exception e) {
+		}
+        return result;
+	}
+	
+	
+	private String makeResult(InputStream inputStream) throws Exception {
+		StringBuilder outputString = new StringBuilder();
+        	try{
+        		String string;
+                	if (inputStream != null){
+                		BufferedReader reader = new BufferedReader(new
+                		InputStreamReader(inputStream, ENCODING));
+
+                        while(null != (string = reader.readLine())){
+                                outputString.append(string).append('\n');
+                        }
+                	}
+        	}	catch (Exception e) {
+                System.out.println("Error reading stream.");
+        	}
+        return outputString.toString();
+	}
+	
+	
+	public void doGet(HttpServletRequest req, HttpServletResponse resp)
+			throws IOException {
+		resp.setContentType("text/plain");
+		resp.getWriter().println("Hello, world\n\n\n");
+		String[] GETreport = req.toString().split("\n");
+		String firstLine = GETreport[0];
+		String ModuleAndQuery = firstLine.split(" ")[1];
+		String Query = ModuleAndQuery.split("\\?")[1];
+		String teamName = Query.split(";")[0].split("=")[1];
+		String scheduleName = teamName + "_schedule.txt";
+		String Date = Query.split(";")[1].split("=")[1];
+		resp.getWriter().println(teamName);
+		resp.getWriter().println(Date);
+		resp.getWriter().println();
+		resp.getWriter().println("\n\n\n");
+		//String x = loadTwitter(teamName, Date);
+		//resp.getWriter().println(x);
+		
+	}
+}
